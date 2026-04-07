@@ -231,6 +231,9 @@ input, textarea { font: inherit; }
   flex-direction: column; gap: 5px;
   padding: 0.5rem;
   border-radius: var(--radius-sm);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 .hamburger-line {
   width: 24px; height: 2px;

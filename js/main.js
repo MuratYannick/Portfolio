@@ -29,7 +29,6 @@ const cursorFollower = document.getElementById('cursor-follower');
 if (window.matchMedia('(pointer: fine)').matches) {
   let followerX = 0, followerY = 0;
   let curX = 0, curY = 0;
-  let rafId;
 
   document.addEventListener('mousemove', (e) => {
     curX = e.clientX;
@@ -43,7 +42,7 @@ if (window.matchMedia('(pointer: fine)').matches) {
     followerY += (curY - followerY) * 0.12;
     cursorFollower.style.left = followerX + 'px';
     cursorFollower.style.top  = followerY + 'px';
-    rafId = requestAnimationFrame(animateFollower);
+    requestAnimationFrame(animateFollower);
   }
   animateFollower();
 
@@ -109,27 +108,48 @@ function updateActiveLink() {
 }
 
 // Mobile menu
-navToggle.addEventListener('click', () => {
+function toggleMenu() {
   const isOpen = navMenu.classList.toggle('open');
   navToggle.setAttribute('aria-expanded', isOpen);
   document.body.style.overflow = isOpen ? 'hidden' : '';
-});
+}
+
+function closeMenu() {
+  navMenu.classList.remove('open');
+  navToggle.setAttribute('aria-expanded', 'false');
+  document.body.style.overflow = '';
+}
+
+// touchend prend la main sur mobile, preventDefault bloque le click fantôme qui suivrait
+navToggle.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  toggleMenu();
+}, { passive: false });
+
+// Fallback click pour desktop (ne se déclenche pas si touchend a déjà géré l'event)
+navToggle.addEventListener('click', toggleMenu);
 
 // Close on link click
 navLinks.forEach(link => {
-  link.addEventListener('click', () => {
-    navMenu.classList.remove('open');
-    navToggle.setAttribute('aria-expanded', 'false');
-    document.body.style.overflow = '';
-  });
+  link.addEventListener('click', closeMenu);
+  link.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    closeMenu();
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, { passive: false });
 });
 
-// Close on outside click
+// Close on outside touch/click
+document.addEventListener('touchstart', (e) => {
+  if (navMenu.classList.contains('open') && !navbar.contains(e.target)) {
+    closeMenu();
+  }
+}, { passive: true });
+
 document.addEventListener('click', (e) => {
   if (navMenu.classList.contains('open') && !navbar.contains(e.target)) {
-    navMenu.classList.remove('open');
-    navToggle.setAttribute('aria-expanded', 'false');
-    document.body.style.overflow = '';
+    closeMenu();
   }
 });
 
