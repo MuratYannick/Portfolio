@@ -455,6 +455,14 @@ input, textarea { font: inherit; }
   transform: translateY(-2px);
 }
 .btn-sm { padding: 0.5rem 1rem; font-size: 0.85rem; border-radius: var(--radius-sm); }
+.btn-disabled {
+  border: 1px solid var(--clr-border-light);
+  color: var(--clr-text-dim);
+  background: transparent;
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
+}
 .btn-full { width: 100%; justify-content: center; }
 .btn-loading { display: none; }
 .btn.loading .btn-text { display: none; }
