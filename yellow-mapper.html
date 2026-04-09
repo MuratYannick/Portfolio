@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Yellow Mapper – Outil de scraping et de gestion de données d'établissements depuis Google Maps et Pages Jaunes. Développé par Yannick Murat." />
+  <title>Yellow Mapper – Démo | Yannick Murat</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+  <style>
+    /* ── Variables (identiques au portfolio) ── */
+    :root {
+      --clr-bg:           #080810;
+      --clr-surface:      #0f0f1a;
+      --clr-card:         #13131f;
+      --clr-border:       rgba(99,102,241,.15);
+      --clr-border-light: rgba(255,255,255,.07);
+      --clr-primary:      #6366f1;
+      --clr-primary-dark: #4f46e5;
+      --clr-primary-glow: rgba(99,102,241,.3);
+      --clr-accent:       #22d3ee;
+      --clr-accent-glow:  rgba(34,211,238,.25);
+      --clr-text:         #e2e8f0;
+      --clr-text-muted:   #94a3b8;
+      --clr-text-dim:     #475569;
+      --gradient-primary: linear-gradient(135deg,#6366f1 0%,#a855f7 100%);
+      --font-main:  'Inter', sans-serif;
+      --font-code:  'Fira Code', monospace;
+      --radius-sm:  6px;
+      --radius-md:  12px;
+      --radius-lg:  20px;
+      --transition: .3s cubic-bezier(.4,0,.2,1);
+      --container:  1100px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body { font-family: var(--font-main); background: var(--clr-bg); color: var(--clr-text); line-height: 1.7; overflow-x: hidden; }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+    :focus-visible { outline: 2px solid var(--clr-primary); outline-offset: 3px; border-radius: var(--radius-sm); }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: 60px;
+      background: rgba(8,8,16,.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--clr-border-light);
+      display: flex; align-items: center;
+    }
+    .topbar-inner {
+      max-width: var(--container); margin: 0 auto; padding: 0 1.5rem;
+      width: 100%;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar-back {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .88rem; color: var(--clr-text-muted);
+      transition: color var(--transition);
+    }
+    .topbar-back:hover { color: var(--clr-primary); }
+    .topbar-logo {
+      font-family: var(--font-code); font-size: 1rem;
+      color: var(--clr-text-muted);
+    }
+    .topbar-logo span { color: var(--clr-accent); }
+    .topbar-links { display: flex; gap: .75rem; }
+    .topbar-links a {
+      display: flex; align-items: center; gap: .4rem;
+      font-size: .85rem; font-weight: 500;
+      padding: .4rem .9rem;
+      border-radius: var(--radius-md);
+      transition: all var(--transition);
+    }
+    .topbar-links .btn-gh {
+      border: 1px solid var(--clr-border-light);
+      color: var(--clr-text-muted);
+    }
+    .topbar-links .btn-gh:hover { border-color: var(--clr-primary); color: var(--clr-primary); }
+    .topbar-links .btn-back {
+      background: var(--gradient-primary);
+      color: #fff;
+      box-shadow: 0 0 16px var(--clr-primary-glow);
+    }
+    .topbar-links .btn-back:hover { box-shadow: 0 0 28px var(--clr-primary-glow); transform: translateY(-1px); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 52vh;
+      padding: calc(60px + 4rem) 1.5rem 4rem;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(99,102,241,.1) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 30%, rgba(34,211,238,.07) 0%, transparent 50%);
+    }
+    .hero-grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size: 50px 50px;
+      mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+      -webkit-mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
+    }
+    .hero-content {
+      position: relative; z-index: 1;
+      text-align: center; max-width: 720px;
+    }
+    .hero-tag {
+      display: inline-flex; align-items: center; gap: .5rem;
+      font-family: var(--font-code); font-size: .82rem;
+      color: var(--clr-accent); letter-spacing: .12em; text-transform: uppercase;
+      margin-bottom: 1.25rem;
+    }
+    .hero-tag::before, .hero-tag::after {
+      content: ''; flex: 1; height: 1px;
+      background: linear-gradient(to right, transparent, rgba(34,211,238,.4));
+    }
+    .hero-tag::before { background: linear-gradient(to left, transparent, rgba(34,211,238,.4)); }
+
+    .hero h1 {
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      font-weight: 700; line-height: 1.1;
+      margin-bottom: 1.25rem;
+    }
+    .hero h1 span {
+      background: var(--gradient-primary);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-desc {
+      font-size: 1.05rem; color: var(--clr-text-muted);
+      max-width: 580px; margin: 0 auto 2rem;
+    }
+    .hero-badges { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; }
+    .badge {
+      font-size: .78rem; font-weight: 600;
+      background: rgba(99,102,241,.1);
+      border: 1px solid rgba(99,102,241,.25);
+      color: var(--clr-primary);
+      padding: .3rem .8rem; border-radius: 999px;
+    }
+
+    /* ── CONTAINER ── */
+    .container { max-width: var(--container); margin: 0 auto; padding: 0 1.5rem; }
+
+    /* ── SECTION ── */
+    .section { padding: 5rem 0; }
+    .section-label {
+      font-family: var(--font-code); font-size: .82rem;
+      color: var(--clr-accent); letter-spacing: .12em; text-transform: uppercase;
+      display: block; margin-bottom: .6rem;
+    }
+    .section-title {
+      font-size: clamp(1.6rem, 4vw, 2.2rem); font-weight: 700;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 2.5rem;
+    }
+
+    /* ── FEATURES ── */
+    .features { background: var(--clr-surface); }
+    .features-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    .feature-card {
+      background: var(--clr-card);
+      border: 1px solid var(--clr-border-light);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      display: flex; gap: 1rem; align-items: flex-start;
+      transition: border-color var(--transition), transform var(--transition);
+    }
+    .feature-card:hover { border-color: var(--clr-primary); transform: translateY(-3px); }
+    .feature-icon {
+      width: 44px; height: 44px; flex-shrink: 0;
+      background: rgba(99,102,241,.1);
+      border: 1px solid rgba(99,102,241,.2);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; color: var(--clr-primary);
+      transition: background var(--transition);
+    }
+    .feature-card:hover .feature-icon { background: var(--clr-primary); color: #fff; }
+    .feature-body h3 { font-size: 1rem; font-weight: 700; margin-bottom: .3rem; }
+    .feature-body p { font-size: .9rem; color: var(--clr-text-muted); }
+
+    /* ── GALLERY ── */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.25rem;
+    }
+    .gallery-item {
+      position: relative; overflow: hidden;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--clr-border-light);
+      background: var(--clr-card);
+      cursor: zoom-in;
+      transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+    }
+    .gallery-item:hover {
+      border-color: var(--clr-primary);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(99,102,241,.15);
+    }
+    .gallery-item img {
+      width: 100%; height: 220px;
+      object-fit: cover; object-position: top;
+      display: block;
+      transition: transform .5s ease;
+    }
+    .gallery-item:hover img { transform: scale(1.03); }
+    .gallery-caption {
+      padding: .85rem 1rem;
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .88rem; font-weight: 600; color: var(--clr-text-muted);
+      border-top: 1px solid var(--clr-border-light);
+    }
+    .gallery-caption i { color: var(--clr-primary); font-size: .8rem; }
+    .gallery-zoom {
+      position: absolute; top: .75rem; right: .75rem;
+      width: 32px; height: 32px;
+      background: rgba(8,8,16,.7);
+      border: 1px solid var(--clr-border-light);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--clr-text-muted); font-size: .75rem;
+      opacity: 0; transition: opacity var(--transition);
+      pointer-events: none;
+    }
+    .gallery-item:hover .gallery-zoom { opacity: 1; }
+
+    /* ── LIGHTBOX ── */
+    #lightbox {
+      display: none;
+      position: fixed; inset: 0; z-index: 9000;
+      background: rgba(0,0,0,.93);
+      align-items: center; justify-content: center;
+      padding: 1rem;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    #lightbox.open { display: flex; }
+    #lightbox img {
+      max-width: 100%; max-height: 90vh;
+      border-radius: var(--radius-md);
+      box-shadow: 0 0 80px rgba(99,102,241,.2);
+      object-fit: contain;
+    }
+    .lightbox-close {
+      position: fixed; top: 1.25rem; right: 1.25rem;
+      width: 42px; height: 42px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid var(--clr-border-light);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--clr-text); font-size: 1rem;
+      cursor: pointer;
+      transition: background var(--transition), border-color var(--transition);
+    }
+    .lightbox-close:hover { background: rgba(239,68,68,.2); border-color: #ef4444; color: #ef4444; }
+    .lightbox-nav {
+      position: fixed; top: 50%; transform: translateY(-50%);
+      width: 44px; height: 44px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--clr-border-light);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--clr-text); font-size: 1rem;
+      cursor: pointer;
+      transition: background var(--transition), border-color var(--transition);
+    }
+    .lightbox-nav:hover { background: var(--clr-primary-glow); border-color: var(--clr-primary); }
+    .lightbox-prev { left: 1rem; }
+    .lightbox-next { right: 1rem; }
+    .lightbox-counter {
+      position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+      font-family: var(--font-code); font-size: .82rem;
+      color: var(--clr-text-muted);
+      background: rgba(8,8,16,.7);
+      padding: .3rem .9rem; border-radius: 999px;
+      border: 1px solid var(--clr-border-light);
+    }
+    .lightbox-caption {
+      position: fixed; bottom: 4rem; left: 50%; transform: translateX(-50%);
+      font-size: .88rem; color: var(--clr-text-muted);
+      background: rgba(8,8,16,.8);
+      padding: .4rem 1rem; border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    /* ── STACK ── */
+    .stack-section { background: var(--clr-surface); }
+    .stack-pills { display: flex; flex-wrap: wrap; gap: .75rem; }
+    .stack-pill {
+      display: flex; align-items: center; gap: .5rem;
+      background: var(--clr-card);
+      border: 1px solid var(--clr-border-light);
+      border-radius: 999px;
+      padding: .5rem 1.1rem;
+      font-size: .88rem; font-weight: 500; color: var(--clr-text-muted);
+      transition: border-color var(--transition), color var(--transition);
+    }
+    .stack-pill:hover { border-color: var(--clr-primary); color: var(--clr-primary); }
+    .stack-pill i { color: var(--clr-primary); font-size: .8rem; }
+
+    /* ── CTA ── */
+    .cta-section { text-align: center; padding: 5rem 1.5rem; }
+    .cta-section p { color: var(--clr-text-muted); margin-bottom: 2rem; font-size: 1.05rem; }
+    .cta-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; gap: .5em;
+      padding: .75rem 1.75rem;
+      font-family: var(--font-main); font-size: .95rem; font-weight: 600;
+      border-radius: var(--radius-md);
+      transition: transform var(--transition), box-shadow var(--transition);
+      border: none; cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--gradient-primary); color: #fff;
+      box-shadow: 0 0 20px var(--clr-primary-glow);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 35px var(--clr-primary-glow); }
+    .btn-outline {
+      border: 1.5px solid var(--clr-border);
+      color: var(--clr-text); background: rgba(255,255,255,.02);
+    }
+    .btn-outline:hover { border-color: var(--clr-primary); color: var(--clr-primary); transform: translateY(-2px); }
+
+    /* ── FOOTER ── */
+    .footer {
+      border-top: 1px solid var(--clr-border-light);
+      padding: 1.5rem;
+      text-align: center;
+      font-size: .82rem; color: var(--clr-text-dim);
+    }
+    .footer a { color: var(--clr-primary); }
+
+    /* ── RESPONSIVE ── */
+    @media (min-width: 640px) {
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .gallery-grid  { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (min-width: 1024px) {
+      .features-grid { grid-template-columns: repeat(3, 1fr); }
+      .gallery-grid  { grid-template-columns: repeat(3, 1fr); }
+      .gallery-item img { height: 200px; }
+    }
+
+    /* ── REVEAL ── */
+    .reveal {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity .6s ease, transform .6s ease;
+      transition-delay: var(--delay, 0s);
+    }
+    .reveal.visible { opacity: 1; transform: none; }
+  </style>
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <header class="topbar" role="banner">
+    <div class="topbar-inner">
+      <a href="index.html" class="topbar-back" aria-label="Retour au portfolio">
+        <i class="fas fa-arrow-left" aria-hidden="true"></i>
+        Portfolio
+      </a>
+      <span class="topbar-logo"><span>&lt;</span>YM<span>/&gt;</span></span>
+      <nav class="topbar-links" aria-label="Liens du projet">
+        <a href="https://github.com/MuratYannick/outil-de-scraping" target="_blank" rel="noopener noreferrer" class="btn-gh" aria-label="Voir le code sur GitHub">
+          <i class="fab fa-github" aria-hidden="true"></i>Code
+        </a>
+        <a href="index.html#contact" class="btn-back">
+          <i class="fas fa-paper-plane" aria-hidden="true"></i>Me contacter
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero" aria-label="Présentation du projet">
+    <div class="hero-grid" aria-hidden="true"></div>
+    <div class="hero-content">
+      <div class="hero-tag" aria-hidden="true">Projet – 2025 · WeBeezzy</div>
+      <h1>Yellow <span>Mapper</span></h1>
+      <p class="hero-desc">
+        Outil de scraping et de gestion de données d'établissements professionnels
+        depuis <strong>Google Maps</strong> et <strong>Pages Jaunes</strong> —
+        filtrage avancé, dédoublonnage et export centralisé.
+      </p>
+      <div class="hero-badges" role="list" aria-label="Technologies">
+        <span class="badge" role="listitem">React</span>
+        <span class="badge" role="listitem">Node.js</span>
+        <span class="badge" role="listitem">MySQL</span>
+        <span class="badge" role="listitem">Playwright</span>
+        <span class="badge" role="listitem">Express</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section features" aria-label="Fonctionnalités">
+    <div class="container">
+      <span class="section-label reveal">Fonctionnalités</span>
+      <h2 class="section-title reveal">Ce que fait l'application</h2>
+      <div class="features-grid">
+
+        <div class="feature-card reveal" style="--delay:.05s">
+          <div class="feature-icon" aria-hidden="true"><i class="fab fa-google"></i></div>
+          <div class="feature-body">
+            <h3>Scraping Google Maps</h3>
+            <p>Extraction automatisée des données d'établissements (nom, adresse, téléphone, notes…) via Playwright.</p>
+          </div>
+        </div>
+
+        <div class="feature-card reveal" style="--delay:.1s">
+          <div class="feature-icon" aria-hidden="true"><i class="fas fa-book"></i></div>
+          <div class="feature-body">
+            <h3>Scraping Pages Jaunes</h3>
+            <p>Collecte complémentaire depuis Pages Jaunes pour enrichir et croiser les données récupérées.</p>
+          </div>
+        </div>
+
+        <div class="feature-card reveal" style="--delay:.15s">
+          <div class="feature-icon" aria-hidden="true"><i class="fas fa-search"></i></div>
+          <div class="feature-body">
+            <h3>Filtre de recherche</h3>
+            <p>Recherche textuelle instantanée dans les résultats pour retrouver rapidement un établissement.</p>
+          </div>
+        </div>
+
+        <div class="feature-card reveal" style="--delay:.2s">
+          <div class="feature-icon" aria-hidden="true"><i class="fas fa-tags"></i></div>
+          <div class="feature-body">
+            <h3>Filtrage par tags</h3>
+            <p>Classement et filtrage des entrées par catégories et tags pour organiser la base de données.</p>
+          </div>
+        </div>
+
+        <div class="feature-card reveal" style="--delay:.25s">
+          <div class="feature-icon" aria-hidden="true"><i class="fas fa-edit"></i></div>
+          <div class="feature-body">
+            <h3>Modification des entrées</h3>
+            <p>Édition directe des fiches d'établissements pour corriger ou compléter les données collectées.</p>
+          </div>
+        </div>
+
+        <div class="feature-card reveal" style="--delay:.3s">
+          <div class="feature-icon" aria-hidden="true"><i class="fas fa-compress-arrows-alt"></i></div>
+          <div class="feature-body">
+            <h3>Fusion des doublons</h3>
+            <p>Détection et fusion automatique des doublons pour maintenir une base de données propre et fiable.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- GALLERY -->
+  <section class="section" aria-label="Captures d'écran">
+    <div class="container">
+      <span class="section-label reveal">Aperçu</span>
+      <h2 class="section-title reveal">Captures d'écran</h2>
+      <div class="gallery-grid" id="gallery" role="list">
+
+        <div class="gallery-item reveal" style="--delay:.05s" data-index="0" role="listitem" tabindex="0" aria-label="Scraping Google Maps">
+          <img src="assets/img/Yellow Mapper/Scraping-GoogleMaps.png" alt="Interface de scraping Google Maps" loading="lazy" />
+          <div class="gallery-zoom" aria-hidden="true"><i class="fas fa-expand"></i></div>
+          <div class="gallery-caption"><i class="fab fa-google" aria-hidden="true"></i>Scraping Google Maps</div>
+        </div>
+
+        <div class="gallery-item reveal" style="--delay:.1s" data-index="1" role="listitem" tabindex="0" aria-label="Scraping Pages Jaunes">
+          <img src="assets/img/Yellow Mapper/Scraping-PagesJaunes.png" alt="Interface de scraping Pages Jaunes" loading="lazy" />
+          <div class="gallery-zoom" aria-hidden="true"><i class="fas fa-expand"></i></div>
+          <div class="gallery-caption"><i class="fas fa-book" aria-hidden="true"></i>Scraping Pages Jaunes</div>
+        </div>
+
+        <div class="gallery-item reveal" style="--delay:.15s" data-index="2" role="listitem" tabindex="0" aria-label="Résultats">
+          <img src="assets/img/Yellow Mapper/Résultats.png" alt="Vue des résultats collectés" loading="lazy" />
+          <div class="gallery-zoom" aria-hidden="true"><i class="fas fa-expand"></i></div>
+          <div class="gallery-caption"><i class="fas fa-list" aria-hidden="true"></i>Résultats collectés</div>
+        </div>
+
+        <div class="gallery-item reveal" style="--delay:.2s" data-index="3" role="listitem" tabindex="0" aria-label="Filtre de recherche">
+          <img src="assets/img/Yellow Mapper/Filtre-Recherche.png" alt="Filtre de recherche textuelle" loading="lazy" />
+          <div class="gallery-zoom" aria-hidden="true"><i class="fas fa-expand"></i></div>
+          <div class="gallery-caption"><i class="fas fa-search" aria-hidden="true"></i>Filtre de recherche</div>
+        </div>
+
+        <div class="gallery-item reveal" style="--delay:.25s" data-index="4" role="listitem" tabindex="0" aria-label="Filtre par tags">
+          <img src="assets/img/Yellow Mapper/Filtre-Tags.png" alt="Filtrage par tags et catégories" loading="lazy" />
+          <div class="gallery-zoom" aria-hidden="true"><i class="fas fa-expand"></i></div>
+          <div class="gallery-caption"><i class="fas fa-tags" aria-hidden="true"></i>Filtre par tags</div>
+        </div>
+
+        <div class="gallery-item reveal" style="--delay:.3s" data-index="5" role="listitem" tabindex="0" aria-label="Modification d'une entrée">
+          <img src="assets/img/Yellow Mapper/Modification.png" alt="Modification d'une fiche établissement" loading="lazy" />
+          <div class="gallery-zoom" aria-hidden="true"><i class="fas fa-expand"></i></div>
+          <div class="gallery-caption"><i class="fas fa-edit" aria-hidden="true"></i>Modification d'une entrée</div>
+        </div>
+
+        <div class="gallery-item reveal" style="--delay:.35s" data-index="6" role="listitem" tabindex="0" aria-label="Fusion des doublons">
+          <img src="assets/img/Yellow Mapper/fusion des doublons.png" alt="Fusion automatique des doublons" loading="lazy" />
+          <div class="gallery-zoom" aria-hidden="true"><i class="fas fa-expand"></i></div>
+          <div class="gallery-caption"><i class="fas fa-compress-arrows-alt" aria-hidden="true"></i>Fusion des doublons</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- STACK -->
+  <section class="section stack-section" aria-label="Stack technique">
+    <div class="container">
+      <span class="section-label reveal">Stack technique</span>
+      <h2 class="section-title reveal">Technologies utilisées</h2>
+      <div class="stack-pills reveal">
+        <span class="stack-pill"><i class="fab fa-react" aria-hidden="true"></i>React</span>
+        <span class="stack-pill"><i class="fab fa-node-js" aria-hidden="true"></i>Node.js</span>
+        <span class="stack-pill"><i class="fas fa-server" aria-hidden="true"></i>Express</span>
+        <span class="stack-pill"><i class="fas fa-database" aria-hidden="true"></i>MySQL</span>
+        <span class="stack-pill"><i class="fas fa-robot" aria-hidden="true"></i>Playwright</span>
+        <span class="stack-pill"><i class="fab fa-js-square" aria-hidden="true"></i>JavaScript</span>
+        <span class="stack-pill"><i class="fas fa-code" aria-hidden="true"></i>API REST</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section" aria-label="Call to action">
+    <div class="container">
+      <span class="section-label">Intéressé ?</span>
+      <h2 class="section-title">Voir le code ou me contacter</h2>
+      <p>Retrouvez le code source complet sur GitHub ou contactez-moi pour en savoir plus.</p>
+      <div class="cta-buttons">
+        <a href="https://github.com/MuratYannick/outil-de-scraping" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
+          <i class="fab fa-github" aria-hidden="true"></i>Voir le code
+        </a>
+        <a href="index.html#contact" class="btn btn-primary">
+          <i class="fas fa-paper-plane" aria-hidden="true"></i>Me contacter
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer" role="contentinfo">
+    <p>
+      &copy; <span id="year"></span> <a href="index.html">Yannick Murat</a>
+      · Développeur Full-Stack · Hyères (83)
+    </p>
+  </footer>
+
+  <!-- LIGHTBOX -->
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="Visionneuse d'image">
+    <button class="lightbox-close" id="lbClose" aria-label="Fermer"><i class="fas fa-times" aria-hidden="true"></i></button>
+    <button class="lightbox-nav lightbox-prev" id="lbPrev" aria-label="Image précédente"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
+    <img id="lbImg" src="" alt="" />
+    <button class="lightbox-nav lightbox-next" id="lbNext" aria-label="Image suivante"><i class="fas fa-chevron-right" aria-hidden="true"></i></button>
+    <div class="lightbox-caption" id="lbCaption" aria-live="polite"></div>
+    <div class="lightbox-counter" id="lbCounter" aria-live="polite"></div>
+  </div>
+
+  <script>
+    'use strict';
+
+    // ── Année footer ──
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // ── Scroll reveal ──
+    const revealEls = document.querySelectorAll('.reveal');
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add('visible'); revealObserver.unobserve(e.target); }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -30px 0px' });
+    revealEls.forEach(el => revealObserver.observe(el));
+
+    // ── Lightbox ──
+    const items    = [...document.querySelectorAll('.gallery-item')];
+    const lightbox = document.getElementById('lightbox');
+    const lbImg    = document.getElementById('lbImg');
+    const lbCaption= document.getElementById('lbCaption');
+    const lbCounter= document.getElementById('lbCounter');
+    let current    = 0;
+
+    function openLightbox(index) {
+      current = index;
+      const item = items[index];
+      const img  = item.querySelector('img');
+      const cap  = item.querySelector('.gallery-caption').textContent.trim();
+      lbImg.src     = img.src;
+      lbImg.alt     = img.alt;
+      lbCaption.textContent = cap;
+      lbCounter.textContent = `${index + 1} / ${items.length}`;
+      lightbox.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      document.getElementById('lbClose').focus();
+    }
+
+    function closeLightbox() {
+      lightbox.classList.remove('open');
+      document.body.style.overflow = '';
+      items[current].focus();
+    }
+
+    function navigate(dir) {
+      current = (current + dir + items.length) % items.length;
+      openLightbox(current);
+    }
+
+    items.forEach((item, i) => {
+      item.addEventListener('click', () => openLightbox(i));
+      item.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLightbox(i); }
+      });
+    });
+
+    document.getElementById('lbClose').addEventListener('click', closeLightbox);
+    document.getElementById('lbPrev').addEventListener('click', () => navigate(-1));
+    document.getElementById('lbNext').addEventListener('click', () => navigate(1));
+
+    lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+
+    document.addEventListener('keydown', e => {
+      if (!lightbox.classList.contains('open')) return;
+      if (e.key === 'Escape')      closeLightbox();
+      if (e.key === 'ArrowLeft')   navigate(-1);
+      if (e.key === 'ArrowRight')  navigate(1);
+    });
+  </script>
+</body>
+</html>
